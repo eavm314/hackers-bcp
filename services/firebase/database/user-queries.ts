@@ -1,4 +1,4 @@
-import { addDoc, collection } from "firebase/firestore";
+import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 
 import { db } from "../instance";
 import { UsersModel } from "../../../models/users";
@@ -12,9 +12,6 @@ const emptyUser: UsersModel = {
   id: "",
   email: "",
   username: "",
-  gastos: [],
-  ingresos: [],
-  objetivo_compra: [],
 };
 
 // Create a document in the collection
@@ -41,9 +38,46 @@ export const createNewUser = async (data: any) => {
 export const getUserByEmail = async (email: string) => {
   try {
     const gottenData = await getData(collectionName);
+
     const gottenUser = gottenData.find((user) => user.email === email) || email;
 
+    if (!gottenUser) {
+      console.error("user not found");
+
+      return null;
+    }
+
     return gottenUser;
+  } catch (error) {
+    console.error(error);
+
+    return null;
+  }
+};
+
+export const getDataFromCollectionsByEmail = async (
+  email: string,
+  nameOfCollection: string,
+) => {
+  try {
+    const collectionToQuery = nameOfCollection;
+    const queryGotten = query(
+      collection(db, collectionToQuery),
+      where("user_email", "==", email),
+    );
+
+    if (!queryGotten) {
+      return null;
+    }
+
+    const collectionGotten = await getDocs(queryGotten);
+    const documents: any[] = [];
+
+    collectionGotten.forEach((doc) => {
+      documents.push({ id: doc.id, ...doc.data() });
+    });
+
+    return documents;
   } catch (error) {
     console.error(error);
 

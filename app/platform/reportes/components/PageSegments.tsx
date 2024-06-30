@@ -2,16 +2,19 @@
 
 import React, { useEffect, useState } from "react";
 
-import { getData } from "../../../../services/firebase/database/queries";
 import { UsersModel } from "../../../../models/users";
+import { TypeSpend } from "../../../../enums/type-spend";
+import { PaymentSaving } from "../../../../models/finances";
 
 import Header from "./Header";
 import Mount from "./Mount";
 import ReportDonutChartTwo from "./ReportDonutChartTwo";
 
 import { useGlobalStore } from "@/store/StoreProvider";
-import { getUserByEmail } from "@/services/firebase/database/user-queries";
-import { PaymentSaving } from "@/models/finances";
+import {
+  getDataFromCollectionsByEmail,
+  getUserByEmail,
+} from "@/services/firebase/database/user-queries";
 
 const PageSegments = () => {
   const { userEmail } = useGlobalStore();
@@ -24,32 +27,10 @@ const PageSegments = () => {
     id: "",
     email: "",
     username: "",
-    gastos: [],
-    ingresos: [],
-    objetivo_compra: [],
   };
 
   const [userData, setUserData] = useState<UsersModel | any>(emptyUser);
-  const data = [
-    {
-      label: PaymentSaving.NECESSARY_PAYMENT,
-      value: 29,
-      color: "#fde047",
-      cutout: "50%",
-    },
-    {
-      label: PaymentSaving.ADDITIONAL_PAYMENT,
-      value: 11,
-      color: "#ef4444",
-      cutout: "50%",
-    },
-    {
-      label: PaymentSaving.SAVING,
-      value: 60,
-      color: "#2563eb",
-      cutout: "50%",
-    },
-  ];
+  const [dataExpensess, setDataExpensess] = useState<any>([]);
 
   const getOneUserData = async () => {
     const user = (await getUserByEmail(userEmail)) || emptyUser;
@@ -58,26 +39,57 @@ const PageSegments = () => {
       setUserData(user);
     }
 
-    const payments = await getSavings();
+    await getSavings();
   };
 
-  const getNecessaryPayments = () => {};
-
-  const getAdditionalPayments = () => {};
-
   const getSavings = async () => {
-    const objetivo_compra = await getData("objetivo_compra");
-    const userDataPayments = objetivo_compra.map((item) => {
-      if (userData.objetivo_compra.includes(item.id)) {
-        return item;
-      }
-    });
+    const dataGastos = await getDataFromCollectionsByEmail(userEmail, "gastos");
+    const dataIngresos = await getDataFromCollectionsByEmail(
+      userEmail,
+      "ingresos",
+    );
 
-    return userDataPayments;
+    const sumGastosRequeridos = dataGastos?.reduce((a, b) => {
+      if (b.tipo === TypeSpend.REQUIRED) {
+        return a + b.monto;
+      }
+    }, 0);
+
+    const sumGastosAdicionales = dataGastos?.reduce((a, b) => {
+      if (b.tipo === TypeSpend.ADDITIONAL) {
+        return a + b.monto;
+      }
+    }, 0);
+
+    const sumIngresos = dataIngresos?.reduce((a, b) => a + b.monto, 0);
+
+    const formatData = [
+      {
+        label: PaymentSaving.SAVING,
+        value: sumIngresos - (sumGastosAdicionales + sumGastosRequeridos),
+        color: "#2563eb",
+        cutout: "50%",
+      },
+      {
+        label: PaymentSaving.ADDITIONAL_PAYMENT,
+        value: sumGastosAdicionales,
+        color: "#ef4444",
+        cutout: "50%",
+      },
+      {
+        label: PaymentSaving.NECESSARY_PAYMENT,
+        value: sumGastosRequeridos,
+        color: "#fde047",
+        cutout: "50%",
+      },
+    ];
+
+    setDataExpensess(formatData);
   };
 
   useEffect(() => {
     getOneUserData();
+    alert(`Bienvenido al estado de sus transacciones ${userData.email}`);
   }, []);
 
   return (
@@ -91,7 +103,7 @@ const PageSegments = () => {
         />
       </div>
       <div className="w-[300px] h-[300px]">
-        <ReportDonutChartTwo data={data} />
+        <ReportDonutChartTwo data={dataExpensess} />
       </div>
     </div>
   );
