@@ -13,11 +13,11 @@ export default function AboutLayout({
   ]
   return (
     <div className="flex">
-      <menu className="flex flex-col bg-background h-screen w-10 gap-4">
+      <div className="flex flex-col bg-background h-screen w-10 gap-4">
         {menu.map((item) => (
           <MenuItem item={item} />
         ))}
-      </menu>
+      </div>
       <section className="flex flex-col items-center w-full gap-4 p-4 md:p-10">
         {children}
       </section>

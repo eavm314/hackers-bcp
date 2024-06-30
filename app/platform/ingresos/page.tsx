@@ -1,31 +1,43 @@
 "use client";
 
-import { useState, useEffect } from 'react';
-import { Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Button, Input, Textarea, Select, Spacer } from "@nextui-org/react";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@nextui-org/modal";
-import { createDocument, getData, deleteData2, updateData } from "../../../services/firebase/database/queries";
+import { Button, DateValue, Input, Table, TableBody, TableCell, TableColumn, TableHeader, TableRow } from "@nextui-org/react";
+import { DocumentData, Timestamp } from 'firebase/firestore';
+import { ChangeEvent, useEffect, useState } from 'react';
+import { deleteData2, getData } from "../../../services/firebase/database/queries";
+import IngresosForm from "./IngresosForm";
+import {CalendarDate, parseDate} from "@internationalized/date";
 
-const categories = ['Trabajo', 'Transacciones', 'Regalos', 'Tienda', 'Cobros'];
-const frequencies = ['Mensual', 'Semanal', 'Trimestral', 'Diario', 'Una sola vez', 'Anual'];
+// import IngresosForm, { IngresoFormData } from './IngresosForm';
+
+type sortConfigType = {
+  key: string | null;
+  direction: string;
+};
+
+export interface IngresoFormData {
+  categoria: string;
+  fecha: DateValue;
+  monto: string;
+  frecuencia: string;
+  detalles: string;
+}
 
 const IngresosPage = () => {
-  const [data, setData] = useState([]);
-  const [filteredData, setFilteredData] = useState([]);
+  const [data, setData] = useState<DocumentData[]>([]);
+  const [filteredData, setFilteredData] = useState<DocumentData[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState({
-    categoria: '',
-    fecha: '',
-    monto: '',
-    frecuencia: '',
-    detalles: ''
-  });
+  const [formData, setFormData] = useState<IngresoFormData | null>(null);
+
+  console.log(data)
+
   const [filters, setFilters] = useState({
     categoria: '',
     fecha: '',
     monto: ''
   });
-  const [editId, setEditId] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const [editId, setEditId] = useState<string | null>(null);
+  const [sortConfig, setSortConfig] = useState<sortConfigType>({ key: null, direction: 'asc' });
   const userId = '1b06yJgdi422b2Unpu8w'; // Reemplaza con el ID del usuario correspondiente
 
   useEffect(() => {
@@ -39,52 +51,23 @@ const IngresosPage = () => {
   }, []);
 
   useEffect(() => {
-    applyFilters();
+    // applyFilters();
   }, [filters, data]);
 
   useEffect(() => {
     applySorting();
   }, [sortConfig]);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({ ...formData, [name]: value });
-  };
-
-  const handleFilterChange = (e) => {
+  const handleFilterChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFilters({ ...filters, [name]: value });
   };
 
-  const handleSubmit = async () => {
-    if (parseFloat(formData.monto) <= 0) {
-      alert("El monto debe ser mayor que 0");
-      return;
-    }
-
-    try {
-      if (editId) {
-        await updateData('ingresos', editId, userId, formData);
-      } else {
-        await createDocument('ingresos', userId, formData);
-      }
-      setModalOpen(false);
-      setFormData({ categoria: '', fecha: '', monto: '', frecuencia: '', detalles: '' });
-      setEditId(null);
-
-      // Refrescar los datos después de agregar o actualizar un documento
-      const result = await getData('ingresos');
-      setData(result);
-      setFilteredData(result);
-    } catch (error) {
-      console.error("Error adding document: ", error);
-    }
-  };
-
-  const handleEdit = (item) => {
+  const handleEdit = (item: DocumentData) => {
     setFormData({
       categoria: item.categoria,
-      fecha: new Date(item.fecha.seconds * 1000).toISOString().split('T')[0],
+      // fecha: new Date(item.fecha.seconds * 1000).toISOString().split('T')[0],
+      fecha: parseDate(formatFirestoreDate(item.fecha)),
       monto: item.monto,
       frecuencia: item.frecuencia,
       detalles: item.detalles
@@ -93,7 +76,7 @@ const IngresosPage = () => {
     setModalOpen(true);
   };
 
-  const handleDelete = async (docId) => {
+  const handleDelete = async (docId: string) => {
     try {
       await deleteData2('ingresos', docId, userId);
       setData(data.filter(item => item.id !== docId));
@@ -103,20 +86,23 @@ const IngresosPage = () => {
     }
   };
 
-  const formatFirestoreDate = (date) => {
+  const formatFirestoreDate = (date: Timestamp) => {
     if (date && date.seconds) {
-      return new Date(date.seconds * 1000).toLocaleDateString();
+      const formatDate = new Date(date.seconds * 1000)
+      // return new CalendarDate(formatDate.getFullYear(), formatDate.getMonth(), formatDate.getDay());
+      return formatDate.toISOString().split('T')[0];
     }
-    return "";
+    // return new CalendarDate(2000, 1, 1);
+    return new Date('2000-01-01').toISOString().split('T')[0];
   };
 
   const applyFilters = () => {
     const filtered = data.filter(item => {
       const formattedDate = formatFirestoreDate(item.fecha);
       return (
-        item.categoria.toLowerCase().includes(filters.categoria.toLowerCase()) &&
-        formattedDate.includes(filters.fecha) &&
-        item.monto.toString().includes(filters.monto)
+        (item.categoria.toLowerCase() === filters.categoria.toLowerCase()) &&
+        (formattedDate.toString() === filters.fecha) &&
+        item.monto == filters.monto
       );
     });
     setFilteredData(filtered);
@@ -124,12 +110,12 @@ const IngresosPage = () => {
 
   const applySorting = () => {
     let sortedData = [...filteredData];
-    if (sortConfig.key) {
+    if (sortConfig.key !== null) {
       sortedData.sort((a, b) => {
-        const aValue = a[sortConfig.key];
-        const bValue = b[sortConfig.key];
+        const aValue = a[sortConfig.key as string];
+        const bValue = b[sortConfig.key as string];
         if (sortConfig.key === 'fecha') {
-          return (new Date(aValue.seconds * 1000) - new Date(bValue.seconds * 1000)) * (sortConfig.direction === 'asc' ? 1 : -1);
+          return (aValue.seconds - bValue.seconds) * (sortConfig.direction === 'asc' ? 1 : -1);
         } else {
           if (aValue < bValue) return sortConfig.direction === 'asc' ? -1 : 1;
           if (aValue > bValue) return sortConfig.direction === 'asc' ? 1 : -1;
@@ -140,7 +126,7 @@ const IngresosPage = () => {
     setFilteredData(sortedData);
   };
 
-  const requestSort = key => {
+  const requestSort = (key: string) => {
     let direction = 'asc';
     if (sortConfig.key === key && sortConfig.direction === 'asc') {
       direction = 'desc';
@@ -152,19 +138,19 @@ const IngresosPage = () => {
     <div>
       <h1>Ingresos</h1>
       <Button onClick={() => setModalOpen(true)}>Agregar</Button>
-      <Table aria-label="Tabla de ingresos" css={{ height: "auto", minWidth: "100%" }}>
+      <Table aria-label="Tabla de ingresos" className="h-auto w-full">
         <TableHeader>
           <TableColumn>
             Categoría
-            <Input size="xs" name="categoria" placeholder="Filtrar" onChange={handleFilterChange} />
+            <Input size="sm" name="categoria" placeholder="Filtrar" onChange={handleFilterChange} />
           </TableColumn>
           <TableColumn>
             Fecha
-            <Input size="xs" name="fecha" type="date" placeholder="Filtrar" onChange={handleFilterChange} />
+            <Input size="sm" name="fecha" type="date" placeholder="Filtrar" onChange={handleFilterChange} />
           </TableColumn>
           <TableColumn>
             Monto
-            <Input size="xs" name="monto" type="number" placeholder="Filtrar" onChange={handleFilterChange} />
+            <Input size="sm" name="monto" type="number" placeholder="Filtrar" onChange={handleFilterChange} />
           </TableColumn>
           <TableColumn>Acciones</TableColumn>
         </TableHeader>
@@ -175,78 +161,17 @@ const IngresosPage = () => {
               <TableCell>{formatFirestoreDate(item.fecha)}</TableCell>
               <TableCell>{item.monto}</TableCell>
               <TableCell>
-                <Button auto onClick={() => handleEdit(item)}>Editar</Button>
-                <Button auto onClick={() => handleDelete(item.id)}>Eliminar</Button>
+                <Button onClick={() => handleEdit(item)}>Editar</Button>
+                <Button onClick={() => handleDelete(item.id)}>Eliminar</Button>
               </TableCell>
             </TableRow>
           ))}
         </TableBody>
       </Table>
-
-      <Modal isOpen={modalOpen} onClose={() => { setModalOpen(false); setEditId(null); }}>
-        <ModalContent>
-          <ModalHeader>
-            <h3>{editId ? 'Editar' : 'Agregar'} Ingreso</h3>
-          </ModalHeader>
-          <ModalBody>
-            <Select
-              label="Categoría"
-              placeholder="Selecciona una categoría"
-              value={formData.categoria}
-              onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-              className="max-w-xs"
-            >
-              {categories.map((category) => (
-                <Select.Option key={category} value={category}>{category}</Select.Option>
-              ))}
-            </Select>
-            <Spacer y={0.5} />
-            <Input
-              name="fecha"
-              label="Fecha"
-              type="date"
-              placeholder="Fecha"
-              value={formData.fecha}
-              onChange={handleInputChange}
-              max={new Date().toISOString().split('T')[0]} // No permite fechas futuras
-            />
-            <Spacer y={0.5} />
-            <Input
-              name="monto"
-              label="Monto"
-              type="number"
-              placeholder="Monto"
-              value={formData.monto}
-              onChange={handleInputChange}
-              min="0.01"
-            />
-            <Spacer y={0.5} />
-            <Select
-              label="Frecuencia"
-              placeholder="Selecciona una frecuencia"
-              value={formData.frecuencia}
-              onChange={(e) => setFormData({ ...formData, frecuencia: e.target.value })}
-              className="max-w-xs"
-            >
-              {frequencies.map((frequency) => (
-                <Select.Option key={frequency} value={frequency}>{frequency}</Select.Option>
-              ))}
-            </Select>
-            <Spacer y={0.5} />
-            <Textarea
-              name="detalles"
-              label="Detalles adicionales"
-              placeholder="Detalles adicionales"
-              value={formData.detalles}
-              onChange={handleInputChange}
-            />
-          </ModalBody>
-          <ModalFooter>
-            <Button flat auto onClick={() => { setModalOpen(false); setEditId(null); }}>Cancelar</Button>
-            <Button onClick={handleSubmit}>{editId ? 'Actualizar' : 'Guardar'}</Button>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
+      {
+        modalOpen &&
+        <IngresosForm item={formData} setIsOpen={setModalOpen} />
+      }
     </div>
   );
 };
