@@ -7,13 +7,21 @@ import { Controller } from "react-hook-form";
 
 interface Props {
   control: any;
+  label: string;
   name: string;
   type: string;
   placeholder: string;
   isPassword?: boolean;
 }
 
-const FormInput = ({ control, name, type, placeholder, isPassword }: Props) => {
+const FormInput = ({
+  control,
+  label,
+  name,
+  type,
+  placeholder,
+  isPassword,
+}: Props) => {
   const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const passwordIconStyles: string = `w-8 h-8 ${!showPassword ? "bg-secondary-blue" : "bg-primary-gray"}
@@ -23,17 +31,21 @@ const FormInput = ({ control, name, type, placeholder, isPassword }: Props) => {
     <Controller
       control={control}
       name={name}
-      render={({ field: { value, onChange }, fieldState: { error } }) => (
+      render={({
+        field: { value, onChange, onBlur },
+        fieldState: { error },
+      }) => (
         <div key={name}>
           {isPassword ? (
             <div className="h-max w-full flex flex-row justify-between items-center">
               <Input
                 className="w-4/5"
-                label={name}
+                label={label}
                 placeholder={placeholder}
                 type={showPassword ? "text" : "password"}
                 value={value.toString()}
                 variant="bordered"
+                onBlur={onBlur}
                 onChange={onChange}
               />
               <button
@@ -56,13 +68,14 @@ const FormInput = ({ control, name, type, placeholder, isPassword }: Props) => {
               type={type}
               value={value.toString()}
               variant="bordered"
+              onBlur={onBlur}
               onChange={onChange}
             />
           )}
           {error && (
             <p
-              className="w-[85%] text-red-600 my-1"
-              style={{ fontSize: "16px" }}
+              className="w-[85%] text-red-600 my-1 ml-2"
+              style={{ fontSize: "12px" }}
             >
               {error.message}
             </p>

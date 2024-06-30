@@ -1,31 +1,33 @@
 "use client";
 
 import React, { useState } from "react";
-import { Spacer, Card, useDisclosure, Spinner } from "@nextui-org/react";
-import { zodResolver } from "@hookform/resolvers/zod";
+import { Card, Spacer, Spinner, useDisclosure } from "@nextui-org/react";
 import { FieldValues, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { createUserWithEmailAndPassword } from "firebase/auth";
 
-import BackgroundPage from "../../../../components/BackgroundPage";
-
-import Title from "@/components/Title";
+import { auth } from "@/services/firebase/instance";
+import BackgroundPage from "@/components/BackgroundPage";
 import MessageModal from "@/components/MessageModal";
+import Title from "@/components/Title";
 import FormInput from "@/components/FormInput";
 import { useGlobalStore } from "@/store/StoreProvider";
-import { VALIDATORS_LOGIN } from "@/data/validators";
-import { LoginFormModel } from "@/models/login";
-import { signIn, signInWithGoogle } from "@/services/firebase/auth";
+import { signIn } from "@/services/firebase/auth";
+import { VALIDATORS_REGISTER } from "@/data/validators";
+import { RegisterFormModel } from "@/models/register";
 
-const FormLogin = () => {
-  const { userEmail, setUserEmail, setAuth } = useGlobalStore();
+const FormRegister = () => {
+  const { setUserEmail, setAuth } = useGlobalStore();
   const [formSumbitted, setFormSumbitted] = useState(false);
-  const { control, handleSubmit } = useForm<LoginFormModel>({
+  const { control, handleSubmit } = useForm<RegisterFormModel>({
     defaultValues: {
       email: "",
+      username: "",
       password: "",
+      repeated_password: "",
     },
-    resolver: zodResolver(VALIDATORS_LOGIN),
+    resolver: zodResolver(VALIDATORS_REGISTER),
   });
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
@@ -34,18 +36,49 @@ const FormLogin = () => {
   const router = useRouter();
 
   const sumbiting = async (data: FieldValues) => {
-    const { email, password } = data;
+    const { email, password, repeated_password, username } = data;
     const gottenUser = await signIn(email, password);
 
-    if (!gottenUser) {
+    if (gottenUser) {
       onOpen();
       setLoading(false);
       setFormSumbitted(false);
 
       return;
     }
+
+    if (repeated_password !== password) {
+      onOpen();
+      setLoading(false);
+      setFormSumbitted(false);
+
+      return;
+    }
+
+    if (username.length === 0) {
+      onOpen();
+      setLoading(false);
+      setFormSumbitted(false);
+
+      return;
+    }
+
+    try {
+      const user = await createUserWithEmailAndPassword(auth, email, password);
+
+      console.log(user.user.email);
+    } catch (error) {
+      console.error(error);
+      onOpen();
+      setLoading(false);
+      setFormSumbitted(false);
+
+      return;
+    }
+
     setUserEmail(email);
     setAuth(true);
+    alert("El usuario se registro dentro de la app!");
     router.push("/platform");
   };
 
@@ -68,7 +101,7 @@ const FormLogin = () => {
       {isOpen && (
         <MessageModal
           isOpen={isOpen}
-          text={"Usuario o contraseña incorrectos"}
+          text={"Datos de registro incorrectos o el usuario ya existe"}
           title={"Error"}
           yesAction={() => {}}
           onOpenChange={onOpenChange}
@@ -82,14 +115,22 @@ const FormLogin = () => {
           onSubmit={handleSubmit((data) => whensubmit(data))}
         >
           <div className="mb-5">
-            <Title size={3} text={"Login"} />
+            <Title size={3} text={"Registro"} />
           </div>
           <div className="w-full">
             <FormInput
               control={control}
-              label="Email"
+              label={"Email"}
               name={"email"}
               placeholder={"email@domain.x"}
+              type={"text"}
+            />
+            <Spacer y={1} />
+            <FormInput
+              control={control}
+              label="Nomre de usuario"
+              name={"username"}
+              placeholder={"nombre usuario"}
               type={"text"}
             />
             <Spacer y={1} />
@@ -103,6 +144,18 @@ const FormLogin = () => {
                 type={"text"}
               />
             </div>
+            <Spacer y={1} />
+            <div className="w-full mt-2">
+              <FormInput
+                control={control}
+                isPassword={true}
+                label="Repita la contraseña"
+                name={"repeated_password"}
+                placeholder={"********"}
+                type={"text"}
+              />
+            </div>
+            <Spacer y={1} />
           </div>
           <Spacer y={1} />
           <Spacer y={1} />
@@ -114,7 +167,7 @@ const FormLogin = () => {
             type="submit"
             onClick={() => setFormSumbitted(true)}
           >
-            Ingresar
+            Registrarse
           </button>
           <button
             className="text-white bg-sky-600
@@ -122,52 +175,14 @@ const FormLogin = () => {
                   rounded-lg text-sm px-5 py-2.5 text-center inline-flex
                   items-center shadow-md w-full justify-center mt-2"
             type="button"
-            onClick={async () => {
-              const gottenUser = await signInWithGoogle();
-
-              if (gottenUser) {
-                setUserEmail(gottenUser?.email || "");
-                setAuth(true);
-              }
-            }}
+            onClick={() => router}
           >
-            <svg
-              aria-hidden="true"
-              className="w-4 h-4 mr-2"
-              fill="currentColor"
-              viewBox="0 0 18 19"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                clipRule="evenodd"
-                d="M8.842 18.083a8.8 8.8 0 0 1-8.65-8.948 8.841
-                      8.841 0 0 1 8.8-8.652h.153a8.464 8.464 0 0 1 5.7
-                      2.257l-2.193 2.038A5.27 5.27 0 0 0 9.09 3.4a5.882
-                      5.882 0 0 0-.2 11.76h.124a5.091 5.091 0 0 0
-                      5.248-4.057L14.3 11H9V8h8.34c.066.543.095 1.09.088
-                      1.636-.086 5.053-3.463 8.449-8.4 8.449l-.186-.002Z"
-                fillRule="evenodd"
-              />
-            </svg>
-            Ingresar con Google
+            Volver
           </button>
-          <p
-            className="text-sm font-light text-gray-500 dark:text-gray-400
-            mb-6 mt-5"
-          >
-            ¿No tiene una cuenta?{" "}
-            <Link
-              className="font-medium text-primary-600 hover:underline
-            dark:text-primary-500"
-              href={"/auth/register"}
-            >
-              Regístrese aquí
-            </Link>
-          </p>
         </form>
       </Card>
     </>
   );
 };
 
-export default FormLogin;
+export default FormRegister;
