@@ -1,9 +1,14 @@
 import { title } from "@/components/primitives";
+import ArticleList from "./ArticleList";
 
-export default function BlogPage() {
+export default async function BlogPage() {
   return (
     <div>
-      <h1 className={title()}>Blog</h1>
+      <div className="my-2">
+        <h1 className={title()}>Blog</h1>
+      </div>
+
+      <ArticleList />
     </div>
   );
 }

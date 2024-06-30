@@ -1,9 +1,9 @@
 import { title } from "@/components/primitives";
 
-export default function PricingPage() {
+export default async function GastosPage() {
   return (
     <div>
-      <h1 className={title()}>Pricing</h1>
+      <h1 className={title()}>Gastos</h1>
     </div>
   );
 }
