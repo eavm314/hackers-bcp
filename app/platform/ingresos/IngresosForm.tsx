@@ -30,18 +30,24 @@ const IngresosForm = ({ item, setIsOpen }: { item: DocumentData | null, setIsOpe
 
   const isEdit = item !== null;
 
-  const handleSubmitForm = async (data: IngresoFormData) => {
+  if (isEdit) {
+    console.log(item);
+  }
 
+  const handleSubmitForm = async (data: IngresoFormData) => {
+    // data.fecha.toDate('yyyy-MM-dd')
+    const dataSend = {...data, fecha: data.fecha.toDate('America/New_York')};
+    console.log(data);
     try {
       if (item) {
-        await updateData('ingresos', item.id, data);
+        await updateData('ingresos', item.id, dataSend);
       } else {
-        await createDocument('ingresos', "123", data);
+        await createDocument('ingresos', "123", dataSend);
       }
       setIsOpen(false);
 
       // Refrescar los datos después de agregar o actualizar un documento
-      await revalidate('/platform/ingresos')
+      // await revalidate('/platform/ingresos')
     } catch (error) {
       console.error("Error adding document: ", error);
     }
@@ -63,6 +69,7 @@ const IngresosForm = ({ item, setIsOpen }: { item: DocumentData | null, setIsOpe
                   label="Categoría"
                   placeholder="Selecciona una categoría"
                   className="max-w-xs"
+                  defaultSelectedKeys={item ? [item.categoria] : []}
                 >
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -102,6 +109,7 @@ const IngresosForm = ({ item, setIsOpen }: { item: DocumentData | null, setIsOpe
                   label="Frecuencia"
                   placeholder="Selecciona una frecuencia"
                   className="max-w-xs"
+                  defaultSelectedKeys={item ? [item.frecuencia] : []}
                 >
                   {frequencies.map((frequency) => (
                     <SelectItem key={frequency} value={frequency}>{frequency}</SelectItem>

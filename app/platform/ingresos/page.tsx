@@ -5,7 +5,7 @@ import { DocumentData, Timestamp } from 'firebase/firestore';
 import { ChangeEvent, useEffect, useState } from 'react';
 import { deleteData2, getData } from "../../../services/firebase/database/queries";
 import IngresosForm from "./IngresosForm";
-import {CalendarDate, parseDate} from "@internationalized/date";
+import { CalendarDate, parseDate } from "@internationalized/date";
 
 // import IngresosForm, { IngresoFormData } from './IngresosForm';
 
@@ -26,9 +26,9 @@ const IngresosPage = () => {
   const [data, setData] = useState<DocumentData[]>([]);
   const [filteredData, setFilteredData] = useState<DocumentData[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
-  const [formData, setFormData] = useState<IngresoFormData | null>(null);
+  const [formData, setFormData] = useState<DocumentData | null>(null);
 
-  console.log(data)
+  // console.log(data)
 
   const [filters, setFilters] = useState({
     categoria: '',
@@ -36,7 +36,7 @@ const IngresosPage = () => {
     monto: ''
   });
 
-  const [editId, setEditId] = useState<string | null>(null);
+  // const [editId, setEditId] = useState<string | null>(null);
   const [sortConfig, setSortConfig] = useState<sortConfigType>({ key: null, direction: 'asc' });
   const userId = '1b06yJgdi422b2Unpu8w'; // Reemplaza con el ID del usuario correspondiente
 
@@ -55,6 +55,17 @@ const IngresosPage = () => {
   }, [filters, data]);
 
   useEffect(() => {
+    // applyFilters();
+    if (!modalOpen) {
+      getData('ingresos').then(result => {
+        setData(result);
+        setFilteredData(result);
+        setFormData(null);
+      })
+    }
+  }, [modalOpen]);
+
+  useEffect(() => {
     applySorting();
   }, [sortConfig]);
 
@@ -65,6 +76,7 @@ const IngresosPage = () => {
 
   const handleEdit = (item: DocumentData) => {
     setFormData({
+      id: item.id,
       categoria: item.categoria,
       // fecha: new Date(item.fecha.seconds * 1000).toISOString().split('T')[0],
       fecha: parseDate(formatFirestoreDate(item.fecha)),
@@ -72,7 +84,7 @@ const IngresosPage = () => {
       frecuencia: item.frecuencia,
       detalles: item.detalles
     });
-    setEditId(item.id);
+    // setEditId(item.id);
     setModalOpen(true);
   };
 
