@@ -60,7 +60,10 @@ const FormInput = ({ control, name, type, placeholder, isPassword }: Props) => {
             />
           )}
           {error && (
-            <p className="w-[85%] text-start text-red-600 my-1">
+            <p
+              className="w-[85%] text-red-600 my-1"
+              style={{ fontSize: "16px" }}
+            >
               {error.message}
             </p>
           )}
