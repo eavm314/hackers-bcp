@@ -70,9 +70,6 @@ const FormRegister = () => {
       await createNewUser({
         email,
         username,
-        gastos: [],
-        ingresos: [],
-        objetivo_compra: [],
       });
 
       console.log(user.user.email);
