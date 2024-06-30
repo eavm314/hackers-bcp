@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext } from "react";
+import React, { createContext, useContext, useState } from "react";
 
 import { Action, State, globalState } from "./globalState";
 
@@ -21,6 +21,9 @@ const StoreProvider = ({ children }: Props) => {
   const clearAuth = globalState((state) => state.clearAuth);
   const clearUserEmail = globalState((state) => state.clearUserEmail);
 
+  const [ginit, setGinit] = useState<any>(null);
+  const [gend, setGend] = useState<any>(null);
+
   const clearAll = () => {
     clearAuth();
     clearUserEmail();
@@ -36,6 +39,10 @@ const StoreProvider = ({ children }: Props) => {
         clearAuth,
         clearUserEmail,
         clearAll,
+        ginit,
+        gend,
+        setGinit,
+        setGend,
       }}
     >
       {children}
@@ -44,7 +51,7 @@ const StoreProvider = ({ children }: Props) => {
 };
 
 export const useGlobalStore = () => {
-  return useContext<State & Action>(StoreContext);
+  return useContext<(State & Action) | any>(StoreContext);
 };
 
 export default StoreProvider;
