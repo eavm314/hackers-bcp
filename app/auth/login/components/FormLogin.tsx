@@ -1,10 +1,13 @@
 "use client";
 
 import React, { useState } from "react";
-import { Spacer, Divider, Card } from "@nextui-org/react";
+import { Spacer, Card } from "@nextui-org/react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FieldValues, useForm } from "react-hook-form";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
+
+import Title from "../../../../components/Title";
 
 import FormInput from "@/components/FormInput";
 import { useGlobalStore } from "@/store/StoreProvider";
@@ -43,36 +46,39 @@ const FormLogin = () => {
   return (
     <Card className="w-full h-full flex justify-center items-center">
       <form
-        className="w-max-content bg-white rounded-lg shadow md:mt-0
+        className="w-max-content bg-white rounded-lg md:mt-0
           sm:max-w-md xl:p-0 dark:bg-gray-800 flex
           flex-col items-center"
         onSubmit={handleSubmit((data) => whensubmit(data))}
       >
-        <h3>Login</h3>
-        <FormInput
-          control={control}
-          name={"email"}
-          placeholder={"email@domain.x"}
-          type={"text"}
-        />
-        <Spacer y={1} />
+        <div className="mb-5">
+          <Title size={3} text={"Login"} />
+        </div>
         <div className="w-full">
           <FormInput
             control={control}
-            isPassword={true}
-            name={"password"}
-            placeholder={"********"}
+            name={"email"}
+            placeholder={"email@domain.x"}
             type={"text"}
           />
+          <Spacer y={1} />
+          <div className="w-full mt-2">
+            <FormInput
+              control={control}
+              isPassword={true}
+              name={"password"}
+              placeholder={"********"}
+              type={"text"}
+            />
+          </div>
         </div>
         <Spacer y={1} />
-        <Divider />
         <Spacer y={1} />
         <button
           className="text-white bg-red-600
                   hover:bg-red-500 active:bg-red-700 font-medium
                   rounded-lg text-sm px-5 py-2.5 text-center inline-flex
-                  items-center shadow-md w-full justify-center mt-2"
+                  items-center shadow-md w-full justify-center mt-5"
           type="button"
         >
           Ingresar
@@ -83,7 +89,14 @@ const FormLogin = () => {
                   rounded-lg text-sm px-5 py-2.5 text-center inline-flex
                   items-center shadow-md w-full justify-center mt-2"
           type="button"
-          onClick={signInWithGoogle}
+          onClick={async () => {
+            const gottenUser = await signInWithGoogle();
+
+            if (gottenUser) {
+              setUserEmail(gottenUser?.email || "");
+              setAuth(true);
+            }
+          }}
         >
           <svg
             aria-hidden="true"
@@ -105,6 +118,19 @@ const FormLogin = () => {
           </svg>
           Ingresar con Google
         </button>
+        <p
+          className="text-sm font-light text-gray-500 dark:text-gray-400
+            mb-6 mt-5"
+        >
+          ¿No tiene una cuenta?{" "}
+          <Link
+            className="font-medium text-primary-600 hover:underline
+            dark:text-primary-500"
+            href={"/auth/register"}
+          >
+            Regístrese aquí
+          </Link>
+        </p>
       </form>
     </Card>
   );
