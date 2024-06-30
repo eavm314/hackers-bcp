@@ -5,7 +5,7 @@ import { USERNAME_EXPRESSION } from "../utils/regularExpressions";
 
 export const VALIDATORS_LOGIN = z.object({
   email: z.string().email({ message: "El correo electrónico es invalido" }),
-  password: z.string(),
+  password: z.string().min(1, { message: "Es requerida una contraseña" }),
 });
 
 export const VALIDATORS_REGISTER = z
