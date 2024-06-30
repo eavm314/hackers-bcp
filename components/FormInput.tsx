@@ -1,32 +1,20 @@
-import { Button } from "@nextui-org/button";
+"use client";
+
+import { Icon } from "@iconify/react";
+import { Input } from "@nextui-org/input";
 import React, { useState } from "react";
 import { Controller } from "react-hook-form";
 
 interface Props {
   control: any;
   name: string;
+  type: string;
   placeholder: string;
-  style: any;
-  multiline?: boolean;
-  scrollEnabled?: boolean;
-  textAlignVertical?: "center" | "auto" | "top" | "bottom" | undefined;
-  number?: boolean;
   isPassword?: boolean;
 }
 
-const FormInput = ({
-  control,
-  name,
-  placeholder,
-  style,
-  multiline = false,
-  scrollEnabled = false,
-  textAlignVertical = undefined,
-  number = false,
-  isPassword,
-}: Props) => {
-  // If it is password
-  const [showPassword, setShowPassword] = useState<boolean>(true);
+const FormInput = ({ control, name, type, placeholder, isPassword }: Props) => {
+  const [showPassword, setShowPassword] = useState<boolean>(false);
 
   const passwordIconStyles: string = `w-8 h-8 ${!showPassword ? "bg-secondary-blue" : "bg-primary-gray"}
                                       rounded-lg border-[1px] flex justify-center items-center`;
@@ -35,38 +23,48 @@ const FormInput = ({
     <Controller
       control={control}
       name={name}
-      render={({
-        field: { value, onChange, onBlur },
-        fieldState: { error },
-      }) => (
-        <View key={name}>
+      render={({ field: { value, onChange }, fieldState: { error } }) => (
+        <div key={name}>
           {isPassword ? (
-            <View className="h-max w-full flex flex-row justify-between items-center">
-              <View className="w-4/5">
-                <Button isIconOnly aria-label="Like" color="danger">
-                  <HeartIcon />
-                </Button>
-              </View>
-            </View>
+            <div className="h-max w-full flex flex-row justify-between items-center">
+              <Input
+                className="w-4/5"
+                label={name}
+                placeholder={placeholder}
+                type={showPassword ? "text" : "password"}
+                value={value.toString()}
+                variant="bordered"
+                onChange={onChange}
+              />
+              <button
+                aria-label="Like"
+                className={passwordIconStyles}
+                color="danger"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                {showPassword ? (
+                  <Icon icon="mdi:eye" />
+                ) : (
+                  <Icon icon="octicon:eye-closed" />
+                )}
+              </button>
+            </div>
           ) : (
-            <TextInput
-              keyboardType={number ? "number-pad" : "default"}
-              multiline={multiline}
+            <Input
+              label={name}
               placeholder={placeholder}
-              scrollEnabled={scrollEnabled}
-              style={style}
-              textAlignVertical={textAlignVertical}
+              type={type}
               value={value.toString()}
-              onBlur={onBlur}
-              onChangeText={onChange}
+              variant="bordered"
+              onChange={onChange}
             />
           )}
           {error && (
-            <Text className="w-[85%] text-start text-red-600 my-1">
+            <p className="w-[85%] text-start text-red-600 my-1">
               {error.message}
-            </Text>
+            </p>
           )}
-        </View>
+        </div>
       )}
     />
   );

@@ -4,6 +4,7 @@ import { Link } from "@nextui-org/link";
 import clsx from "clsx";
 
 import StoreProvider from "../store/StoreProvider";
+
 import { Providers } from "./providers";
 
 import { siteConfig } from "@/config/site";
