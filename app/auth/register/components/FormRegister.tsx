@@ -16,6 +16,7 @@ import { useGlobalStore } from "@/store/StoreProvider";
 import { signIn } from "@/services/firebase/auth";
 import { VALIDATORS_REGISTER } from "@/data/validators";
 import { RegisterFormModel } from "@/models/register";
+import { createNewUser } from "@/services/firebase/database/user-queries";
 
 const FormRegister = () => {
   const { setUserEmail, setAuth } = useGlobalStore();
@@ -65,6 +66,14 @@ const FormRegister = () => {
 
     try {
       const user = await createUserWithEmailAndPassword(auth, email, password);
+
+      await createNewUser({
+        email,
+        username,
+        gastos: [],
+        ingresos: [],
+        objetivo_compra: [],
+      });
 
       console.log(user.user.email);
     } catch (error) {
