@@ -18,7 +18,8 @@ import { LoginFormModel } from "@/models/login";
 import { signIn, signInWithGoogle } from "@/services/firebase/auth";
 
 const FormLogin = () => {
-  const { setUserEmail, setAuth } = useGlobalStore();
+  console.log("funciona");
+  const { userEmail, setUserEmail, setAuth } = useGlobalStore();
   const { control, handleSubmit } = useForm<LoginFormModel>({
     defaultValues: {
       email: "",
@@ -29,6 +30,8 @@ const FormLogin = () => {
 
   const { isOpen, onOpen, onOpenChange } = useDisclosure();
   const [loading, setLoading] = useState(false);
+
+  const [error, setError] = useState(false);
 
   const router = useRouter();
 
