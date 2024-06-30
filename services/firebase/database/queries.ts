@@ -3,10 +3,10 @@ import { db } from "../instance";
 
 
 // Collection name
-const collectionName = 'objetivo_compra';
+// const collectionName = 'objetivo_compra';
 
 // Create a document in the collection
-export const createDocument = async (data: any) => {
+export const createDocument = async (collectionName: string, data: any) => {
   try {
     await addDoc(collection(db,collectionName),data);
     console.log('Document created with ID: ');
